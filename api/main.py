@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # POST endpoint to generate doc
-@app.post("/generate-doc")
+@app.post("/")
 async def generate_doc(request: DocRequest):
     # Prepare prompt for Gemini
     prompt = f"""

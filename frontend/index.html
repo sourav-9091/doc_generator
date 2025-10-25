@@ -133,7 +133,7 @@
       };
 
       try {
-        const res = await fetch("/api/main/generate-doc", {
+        const res = await fetch("/api/main", { // <-- just /api/main
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(data)
