@@ -55,7 +55,7 @@ def sanitize_generated_content(generated_text: str) -> str:
 # -------------------------
 # API Endpoint
 # -------------------------
-@app.post("/")
+@app.post("/generate_doc")
 async def generate_doc(request: DocRequest):
     try:
         # 1. Prepare prompt
