@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SAP Documentation Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+      font-family: 'Inter', sans-serif;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white/80 backdrop-blur-md shadow-2xl rounded-2xl w-full max-w-lg p-8 border border-gray-200 fade-in">
+    <h1 class="text-3xl font-bold text-center text-blue-700 mb-2">SAP Documentation Generator</h1>
+    <p class="text-gray-600 text-center mb-6">Generate professional SAP technical documentation instantly.</p>
+
+    <form id="docForm" class="space-y-5">
+      <!-- Title -->
+      <div>
+        <label for="title" class="block text-sm font-semibold text-gray-700 mb-1">Title *</label>
+        <input type="text" id="title" placeholder="Enter defect or report title" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+
+      <!-- Prepared By -->
+      <div>
+        <label for="preparedBy" class="block text-sm font-semibold text-gray-700 mb-1">Prepared By *</label>
+        <input type="text" id="preparedBy" placeholder="Your name" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+
+      <!-- Error Descriptions -->
+      <div>
+        <label for="errorDescriptions" class="block text-sm font-semibold text-gray-700 mb-1">Error Descriptions *</label>
+        <textarea id="errorDescriptions" rows="3" placeholder="Describe the issue or defect details..." class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+      </div>
+
+      <!-- Chats / Emails -->
+      <div>
+        <label for="chatsEmails" class="block text-sm font-semibold text-gray-700 mb-1">Chats / Emails *</label>
+        <textarea id="chatsEmails" rows="3" placeholder="Include chat or email discussion points..." class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+      </div>
+
+      <!-- Custom Command -->
+      <div>
+        <label for="customCommand" class="block text-sm font-semibold text-gray-700 mb-1">Custom Command (Optional)</label>
+        <textarea id="customCommand" rows="2" placeholder="Any specific request to modify the doc..." class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400"></textarea>
+      </div>
+
+      <!-- Validation Message -->
+      <p id="validationMessage" class="text-red-600 text-sm text-center hidden">
+        ⚠️ Please fill all required fields before generating the document.
+      </p>
+
+      <!-- Generate Button -->
+      <button type="submit" id="generateBtn"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md transition duration-200 shadow-sm hover:shadow-md">
+        Generate Document
+      </button>
+    </form>
+
+    <!-- Status -->
+    <div id="statusContainer" class="mt-6 text-center fade-in">
+      <div id="spinner" class="hidden justify-center mb-3">
+        <div class="w-7 h-7 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      </div>
+      <p id="statusText" class="text-gray-600 text-sm hidden"></p>
+      <div id="result" class="mt-4 hidden">
+        <a id="downloadLink" class="text-blue-700 font-medium hover:underline text-base">⬇️ Download Word File</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("docForm");
+    const spinner = document.getElementById("spinner");
+    const statusText = document.getElementById("statusText");
+    const resultDiv = document.getElementById("result");
+    const downloadLink = document.getElementById("downloadLink");
+    const generateBtn = document.getElementById("generateBtn");
+    const validationMessage = document.getElementById("validationMessage");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("title");
+      const preparedBy = document.getElementById("preparedBy");
+      const errorDescriptions = document.getElementById("errorDescriptions");
+      const chatsEmails = document.getElementById("chatsEmails");
+      const customCommand = document.getElementById("customCommand");
+
+      // Reset previous styles
+      [title, preparedBy, errorDescriptions, chatsEmails].forEach(f => f.classList.remove("border-red-500"));
+      validationMessage.classList.add("hidden");
+
+      // Validate
+      let valid = true;
+      [title, preparedBy, errorDescriptions, chatsEmails].forEach(f => {
+        if (!f.value.trim()) {
+          f.classList.add("border-red-500");
+          valid = false;
+        }
+      });
+
+      if (!valid) {
+        validationMessage.classList.remove("hidden");
+        return;
+      }
+
+      // State: processing
+      spinner.classList.remove("hidden");
+      statusText.classList.remove("hidden");
+      statusText.textContent = "⏳ Generating your document, please wait...";
+      resultDiv.classList.add("hidden");
+      generateBtn.disabled = true;
+      generateBtn.classList.add("opacity-70", "cursor-not-allowed");
+
+      const data = {
+        title: title.value,
+        prepared_by: preparedBy.value,
+        code_snippets: [],
+        error_descriptions: [errorDescriptions.value],
+        chats_emails: [chatsEmails.value],
+        custom_command: [customCommand.value],
+        image_paths: []
+      };
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/generate-doc", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        if (!res.ok) throw new Error(`Server error (${res.status})`);
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = `${data.title}.docx`;
+
+        spinner.classList.add("hidden");
+        statusText.textContent = "✅ Document generated successfully!";
+        resultDiv.classList.remove("hidden");
+      } catch (err) {
+        spinner.classList.add("hidden");
+        statusText.textContent = "❌ Failed to generate document. Please check the server or try again.";
+        console.error(err);
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.classList.remove("opacity-70", "cursor-not-allowed");
+      }
+    });
+  </script>
+</body>
+</html>
