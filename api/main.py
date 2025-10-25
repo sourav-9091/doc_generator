@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import DocRequest
-from app.gemini_client import generate_documentation
-from app.doc_generator import create_word_doc
+from api.schemas import DocRequest
+from api.gemini_client import generate_documentation
+from api.doc_generator import create_word_doc
 from fastapi.responses import FileResponse
 import os
 
